@@ -4,7 +4,7 @@
 
     <h1>Connections</h1>
     <ul id="connections">
-      <li v-for="connection in connections" v-bind:key="connection">
+      <li v-for="connection in connections" v-bind:key="connection.id">
         {{ connection.from_person }}
         From Person: {{ people.filter(person => person.id == connection.from_person)[0].first_name }}
         To Person: {{ people.filter(person => person.id == connection.to_person)[0].first_name }}
@@ -55,7 +55,7 @@
 
     <h1>People</h1>
     <ul id="people">
-      <li v-for="person in people" v-bind:key="person">
+      <li v-for="person in people" v-bind:key="person.id">
         ID: {{ person.id }}
         Name: {{ person.first_name }}, {{ person.last_name }}
         Email: {{ person.email }}
@@ -87,14 +87,10 @@
 </template>
 
 <script>
-import axios from "axios";
-
 export default {
-  name: "HelloWorld",
+  name: "Main",
   props: {
-    msg: String,
-    connections: [],
-    people: []
+    msg: String
   },
   data: function() {
     return {
@@ -123,51 +119,36 @@ export default {
     };
   },
 
-  created() {
-    this.updatePeople().then(() => {
-      this.updateConnections();
-    });
+  async created() {
+    await this.$store.dispatch("getPeople");
+    await this.$store.dispatch("getConnections");
+  },
+
+  computed: {
+    people() {
+      return this.$store.getters.people;
+    },
+
+    connections() {
+      return this.$store.getters.connections;
+    }
   },
 
   methods: {
     getPeople() {
-      return axios.get("http://localhost:5000/people");
+      this.$store.dispatch("getPeople");
     },
 
     getConnections() {
-      return axios.get("http://localhost:5000/connections");
+      this.$store.dispatch("getConnections");
     },
 
-    updatePeople() {
-      var session = this.getPeople().then(result => {
-        this.people = result.data;
-      });
-      return session;
-    },
-
-    updateConnections() {
-      var session = this.getConnections().then(result => {
-        this.connections = result.data;
-      });
-      return session;
-    },
     addPerson(data) {
       let first_name = data.first_name;
       let last_name = data.last_name;
       let email = data.email;
 
-      axios
-        .post("http://localhost:5000/people", {
-          first_name,
-          last_name,
-          email
-        })
-        .then(() => {
-          this.updatePeople();
-        })
-        .catch(function(error) {
-          alert(error);
-        });
+      this.$store.dispatch("addPeople", [first_name, last_name, email]);
     },
 
     addConnections(data) {
@@ -175,18 +156,11 @@ export default {
       let to_person_id = data.to_person_id;
       let connection_type = data.connection_type;
 
-      axios
-        .post("http://localhost:5000/connections", {
-          from_person_id,
-          to_person_id,
-          connection_type
-        })
-        .then(() => {
-          this.updateConnections();
-        })
-        .catch(function(error) {
-          alert(error);
-        });
+      this.$store.dispatch("addConnections", [
+        from_person_id,
+        to_person_id,
+        connection_type
+      ]);
     }
   }
 };
