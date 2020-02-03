@@ -1,4 +1,4 @@
-# hello-world
+# Dash Hudson Connection Front End
 
 ## Project setup
 ```
